@@ -63,6 +63,22 @@ export const PRESETS = [
         frames: [{ id: Date.now() + 4, line1: "METROTOWN STN", line1Font: "balios12", line1Spacing: "0", line2: "", line2Font: "balios7", line2Spacing: "0", animation: "NONE", animSpeed: "0.25", line1Align: "CENTRE", line2Align: "CENTRE", verticalSpacing: "FLUSH" }],
         prFrames: []
     },
+        {
+        id: "smart-stacked",
+        name: "Smart Stacked",
+        color: "#FFFFFF", width: "160", height: "16", speed: "1800", offColor: "#404040", ledShape: "square", ledSize: "3", ledGap: "1",
+        route: "66", routeFont: "smart16x11", routeAlign: "LEFT", routeSuffix: "", routeSuffixFont: "smart12dx10",
+        frames: [{ id: Date.now() + 4, line1: "FRASER VALLEY EXP", line1Font: "smart8x6", line1Spacing: "0", line2: "TO ABBOTSFORD AIRSHOW", line2Font: "7", line2Spacing: "0", animation: "NONE", animSpeed: "0.25", line1Align: "CENTRE", line2Align: "CENTRE", verticalSpacing: "FLUSH" }],
+        prFrames: []
+    },
+    {
+        id: "smart-unstacked",
+        name: "Smart Unstacked",
+        color: "#FFFFFF", width: "160", height: "16", speed: "1800", offColor: "#404040", ledShape: "square", ledSize: "3", ledGap: "1",
+        route: "70", routeFont: "smart16x11", routeAlign: "LEFT", routeSuffix: "", routeSuffixFont: "smart12x10",
+        frames: [{ id: Date.now() + 4, line1: "SWARTZ BAY FERRY", line1Font: "smart10x6", line1Spacing: "0", line2: "", line2Font: "7", line2Spacing: "0", animation: "NONE", animSpeed: "0.25", line1Align: "CENTRE", line2Align: "CENTRE", verticalSpacing: "FLUSH" }],
+        prFrames: []
+    },
     {
         id: "side1",
         name: "Side Sign (96x8)",
@@ -93,6 +109,14 @@ export const PRESETS = [
         color: "#FF9000", width: "48", height: "16", speed: "1800", offColor: "#404040", ledShape: "round", ledSize: "6", ledGap: "1",
         route: "", routeFont: "16t", routeAlign: "LEFT", routeSuffix: "", routeSuffixFont: "16d",
         frames: [{ id: Date.now() + 4, line1: "68", line1Font: "16d", line1Spacing: "0", line2: "", line2Font: "16d", line2Spacing: "0", animation: "NONE", animSpeed: "0.25", line1Align: "CENTRE", line2Align: "CENTRE", verticalSpacing: "FLUSH" }],
+        prFrames: []
+    },
+    {
+        id: "init-next-stop",
+        name: "INIT Next Stop (96x8)",
+        color: "#FF9000", width: "96", height: "8", speed: "1800", offColor: "#404040", ledShape: "round", ledSize: "5", ledGap: "1",
+        route: "", routeFont: "init8", routeAlign: "LEFT", routeSuffix: "", routeSuffixFont: "init8",
+        frames: [{ id: Date.now() + 4, line1: "COQUITLAM CENTRAL STATION AT BAY 2", line1Font: "init8", line1Spacing: "0", line2: "", line2Font: "init8", line2Spacing: "0", animation: "NONE", animSpeed: "0.25", line1Align: "CENTRE", line2Align: "CENTRE", verticalSpacing: "FLUSH" }],
         prFrames: []
     }
 ];
