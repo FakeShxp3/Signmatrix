@@ -1,4 +1,5 @@
 import {track} from '@vercel/analytics'
+import { normalizeEffects } from './displayEffects.js';
 
 export const getInitialState = (key, defaultVal) => {
     if (typeof window !== 'undefined') {
@@ -11,6 +12,7 @@ export const getInitialState = (key, defaultVal) => {
 
 export const buildApiUrl = (debouncedState) => {
     const query = new URLSearchParams();
+    const hardware = normalizeEffects(debouncedState);
 
     let targetFrames = debouncedState.frames;
     let targetPrFrames = debouncedState.prFrames;
@@ -56,9 +58,10 @@ export const buildApiUrl = (debouncedState) => {
     query.append("line1Align", targetFrames.map(f => f.line1Align).join("|"));
     query.append("line2Align", targetFrames.map(f => f.line2Align).join("|"));
     query.append("verticalSpacing", targetFrames.map(f => f.verticalSpacing).join("|"));
-    query.append("ledShape", debouncedState.ledShape);
-    query.append("ledSize", debouncedState.ledSize);
-    query.append("ledGap", debouncedState.ledGap);
+    // Circular LEDs and camera effects are rendered locally for consistent PNG/GIF output.
+    query.append("ledShape", "square");
+    query.append("ledSize", hardware.ledSize);
+    query.append("ledGap", hardware.ledGap);
     query.append("offColor", debouncedState.offColor.replace("#", ""));
 
 
@@ -94,38 +97,27 @@ export const buildApiUrl = (debouncedState) => {
     return `https://signmatrix.pythonlmn.xyz/api/sign?${query.toString()}`;
 };
 
-export const downloadSign = async (debouncedState, setIsDownloading, frames, prFrames, previewMode) => {
+export const downloadSign = async (state, setIsDownloading, blob) => {
+    let objectUrl;
     try {
         setIsDownloading(true);
-        const url = buildApiUrl(debouncedState);
-        const response = await fetch(url);
-        const blob = await response.blob();
-        const objectUrl = window.URL.createObjectURL(blob);
-
-        const hasActivePr = prFrames.some(f => f.line1.trim() !== "" || f.line2.trim() !== "");
-        const isGif = previewMode === "all" && (frames.length > 1 || hasActivePr);
-
-        const extension = isGif ? "gif" : "png";
-
-        const routeName = frames[0].route ? frames[0].route.replace(/\s+/g, '-') : "custom";
-        const fileName = `signmatrix-${routeName}.${extension}`;
-
+        if (!blob || !blob.type.startsWith('image/')) throw new Error('No rendered sign is ready.');
+        objectUrl = window.URL.createObjectURL(blob);
+        const extension = blob.type === 'image/gif' ? 'gif' : 'png';
+        const routeName = (state.route || 'custom').replace(/[^a-z0-9_-]+/gi, '-');
         const link = document.createElement('a');
         link.href = objectUrl;
-        link.download = fileName;
+        link.download = `signmatrix-${routeName}.${extension}`;
         document.body.appendChild(link);
         link.click();
-
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(objectUrl);
-        track('Downloaded Sign', {
-            route: debouncedState.route,
-            line1: debouncedState.frames[0]?.line1
-        });
+        link.remove();
+        track('Downloaded Sign', { route: state.route, line1: state.frames[0]?.line1 });
     } catch (error) {
         console.error(error);
-        alert("Uh... something went wrong downloading your sign")
+        alert('Unable to download the sign. Wait for the preview to finish and try again.');
     } finally {
+        // Give browsers time to start consuming the object URL.
+        if (objectUrl) setTimeout(() => window.URL.revokeObjectURL(objectUrl), 1000);
         setIsDownloading(false);
     }
-}
+};

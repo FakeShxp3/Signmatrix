@@ -7,9 +7,9 @@ function UpdateModal({ version, isOpen, onClose }) {
                 <h2 className="text-2xl font-bold text-white mb-2">New Signmatrix update</h2>
                 <p className="text-sm text-neutral-400 mb-4">Version {version}</p>
                 <div className="text-neutral-300 space-y-3 mb-6">
-                    <p>- Added Luminator Smart (with preset) and INIT fonts (with preset), courtesy of @f99shi</p>
-                    <p>- Improved font dropdown to make it more user friendly</p>
-                    <p>- As always, please report any bugs in the suggestion box.</p>
+                    <p>Round LEDs are now the default for all sign presets.</p>
+                    <p>Add custom colour noise and LED glow, with the same effects in your preview and PNG/GIF downloads.</p>
+                    <p>Share your effects in the page link, or undo and redo your adjustments.</p>
                 </div>
                 <button
                     onClick={onClose}

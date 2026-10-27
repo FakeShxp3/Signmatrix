@@ -2,11 +2,13 @@ import { useState, useEffect } from 'react';
 
 export default function useDebounce(value, delay) {
     const [debouncedValue, setDebouncedValue] = useState(value);
+    // Sign state is JSON data. Progress updates must not restart this timer.
+    const serialized = JSON.stringify(value);
     useEffect(() => {
         const handler = setTimeout(() => {
-            setDebouncedValue(value);
+            setDebouncedValue(JSON.parse(serialized));
         }, delay);
         return () => clearTimeout(handler);
-    }, [value, delay]);
+    }, [serialized, delay]);
     return debouncedValue;
 }

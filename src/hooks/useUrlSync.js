@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { DEFAULT_EFFECTS } from '../utils/displayEffects.js';
 
 function useUrlSync(debouncedState) {
     useEffect(() => {
@@ -27,9 +28,12 @@ function useUrlSync(debouncedState) {
         add("width", debouncedState.width, "200");
         add("height", debouncedState.height, "24");
         add("speed", debouncedState.speed, "2500");
-        add("ledShape", debouncedState.ledShape, "square");
-        add("ledSize", debouncedState.ledSize, "3");
+        add("ledShape", debouncedState.ledShape, "round");
+        add("ledSize", debouncedState.ledSize, "4");
         add("ledGap", debouncedState.ledGap, "1");
+        for (const [key, fallback] of Object.entries(DEFAULT_EFFECTS)) {
+            add(key, debouncedState[key] ?? fallback, fallback);
+        }
 
         add("line1", compress(debouncedState.frames.map(f => f.line1)), "HASTINGS  ST");
         add("line1Font", compress(debouncedState.frames.map(f => f.line1Font)), "12d");

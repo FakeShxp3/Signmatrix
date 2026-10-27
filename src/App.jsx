@@ -1,4 +1,4 @@
-import {useEffect, useState, useCallback} from 'react';
+import {useState, useCallback} from 'react';
 import useDebounce from './hooks/useDebounce';
 import LivePreview from './components/LivePreview';
 
@@ -11,18 +11,22 @@ import HardwarePanel from "./components/HardwarePanel.jsx";
 import PreviewControls from "./components/PreviewControls.jsx";
 import GlobalRoutePanel from "./components/GlobalRoutePanel.jsx";
 import useFrames from "./hooks/useFrames.js";
-import {buildApiUrl, downloadSign, getInitialState} from './utils/signUtils';
+import {downloadSign, getInitialState} from './utils/signUtils';
 import useUrlSync from "./hooks/useUrlSync.js";
 import useUndo from "./hooks/useUndo.js";
 import {PRESETS} from "./data/presets.js";
 import PresetsPanel from "./components/PresetsPanel.jsx";
 import SuggestionBox from "./components/SuggestionBox.jsx";
 
-const CURRENT_UPDATE_VERSION = "v1.9";
+import EffectsPanel from './components/EffectsPanel.jsx';
+import useRenderedSign from './hooks/useRenderedSign.js';
+import { DEFAULT_EFFECTS, normalizeEffects } from './utils/displayEffects.js';
+
+const CURRENT_UPDATE_VERSION = "v1.10";
 
 
 export default function App() {
-    const [showUpdateLog, setShowUpdateLog] = useState(false);
+    const [showUpdateLog, setShowUpdateLog] = useState(() => localStorage.getItem("signmatrix_update_seen") !== CURRENT_UPDATE_VERSION);
     const [showCheatSheet, setShowCheatSheet] = useState(false);
     const [previewMode, setPreviewMode] = useState("all");
 
@@ -74,12 +78,20 @@ export default function App() {
     const [routeSuffix, setRouteSuffix] = useState(() => getInitialState("routeSuffix", ""));
     const [routeSuffixFont, setRouteSuffixFont] = useState(() => getInitialState("routeSuffixFont", "16d"));
     const [routeAlign, setRouteAlign] = useState(() => getInitialState("routeAlign", "LEFT"));
-    const [ledShape, setLedShape] = useState(() => getInitialState("ledShape", "square"));
-    const [ledSize, setLedSize] = useState(() => getInitialState("ledSize", "3"));
+    const [ledShape, setLedShape] = useState(() => getInitialState("ledShape", "round"));
+    const [ledSize, setLedSize] = useState(() => getInitialState("ledSize", "4"));
     const [ledGap, setLedGap] = useState(() => getInitialState("ledGap", "1"));
     const [offColor, setOffColor] = useState(() => getInitialState("offColor", "#404040"));
 
-    const debouncedState = useDebounce({
+    const [effects, setEffects] = useState(() => {
+        const saved = Object.fromEntries(Object.entries(DEFAULT_EFFECTS).map(([key, fallback]) => [key, getInitialState(key, fallback)]));
+        const normalized = normalizeEffects(saved);
+        return Object.fromEntries(Object.keys(DEFAULT_EFFECTS).map(key => [key,
+            key === 'noiseColors' ? normalized[key].join(',') : String(normalized[key])
+        ]));
+    });
+
+    const currentState = {
         frames,
         prFrames,
         color,
@@ -97,8 +109,12 @@ export default function App() {
         ledShape,
         ledSize,
         ledGap,
-        offColor
-    }, 300);
+        offColor,
+        ...effects,
+    };
+    const debouncedState = useDebounce(currentState, 300);
+    const rendered = useRenderedSign(debouncedState);
+    const isPending = JSON.stringify(currentState) !== JSON.stringify(debouncedState);
 
     const restoreState = useCallback((saved) => {
         setFrames(saved.frames);
@@ -119,18 +135,12 @@ export default function App() {
         setLedSize(saved.ledSize);
         setLedGap(saved.ledGap);
         setOffColor(saved.offColor);
+        setEffects(Object.fromEntries(Object.entries(DEFAULT_EFFECTS).map(([key, fallback]) => [key, saved[key] ?? fallback])));
     }, [setFrames, setPrFrames]);
 
     const { undo, redo, canUndo, canRedo } = useUndo(debouncedState, restoreState);
 
     useUrlSync(debouncedState);
-
-    useEffect(() => {
-        const seenVersion = localStorage.getItem("signmatrix_update_seen");
-        if (seenVersion !== CURRENT_UPDATE_VERSION) {
-            setShowUpdateLog(true);
-        }
-    }, []);
 
     const handleCloseUpdateLog = () => {
         localStorage.setItem("signmatrix_update_seen", CURRENT_UPDATE_VERSION);
@@ -138,7 +148,7 @@ export default function App() {
     };
 
     const handleDownload = () => {
-        downloadSign(debouncedState, setIsDownloading, frames, prFrames, previewMode);
+        if (!isPending && !rendered.loading && rendered.blob) downloadSign(debouncedState, setIsDownloading, rendered.blob);
     };
 
     const resetHardwareSettings = () => {
@@ -146,8 +156,8 @@ export default function App() {
         setHeight("24");
         setColor("#FF9000");
         setOffColor("#404040");
-        setLedShape("square");
-        setLedSize("3");
+        setLedShape("round");
+        setLedSize("4");
         setLedGap("1");
         setSpeed("1800");
     };
@@ -179,10 +189,10 @@ export default function App() {
             </div>
         </header>
 
-        <LivePreview apiUrl={buildApiUrl(debouncedState)}/>
+        <LivePreview url={rendered.url} loading={rendered.loading || isPending} error={rendered.error} progress={rendered.progress} onRetry={rendered.retry}/>
 
         <PreviewControls previewMode={previewMode} setPreviewMode={setPreviewMode} frames={frames} prFrames={prFrames}
-                         downloadSign={handleDownload} isDownloading={isDownloading}/>
+                         downloadSign={handleDownload} isDownloading={isDownloading} disabled={isPending || rendered.loading || !rendered.blob}/>
 
         <div className="w-full">
             <PresetsPanel onApplyPreset={applyPreset} />
@@ -198,6 +208,7 @@ export default function App() {
                            ledSize={ledSize} setColor={setColor} offColor={offColor} setHeight={setHeight}
                            setLedGap={setLedGap} setSpeed={setSpeed} setLedSize={setLedSize} setLedShape={setLedShape}
                            setOffColor={setOffColor} setWidth={setWidth} onReset={resetHardwareSettings}/>
+            <EffectsPanel effects={effects} setEffects={setEffects} />
             {frames.map((frame, index) => (
                 <FrameView key={frame.id} removeFrame={removeFrame} updateFrame={updateFrame} index={index}
                            frame={frame} frames={frames}/>

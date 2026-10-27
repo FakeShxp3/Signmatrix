@@ -49,19 +49,20 @@ function HardwarePanel({
                 </div>
 
                 <div className="flex flex-col h-full">
-                    <label className="text-sm text-neutral-400 mb-1">LED Shape</label>
+                    <label htmlFor="led-shape" className="text-sm text-neutral-400 mb-1">LED Shape</label>
                     <select
+                        id="led-shape"
                         value={ledShape}
                         onChange={(e) => setLedShape(e.target.value)}
                         className="w-full h-full px-3 rounded bg-neutral-700 border border-neutral-600 text-white focus:outline-none focus:ring-1 focus:ring-orange-500"
                     >
                         <option value="square">Square</option>
-                        <option value="round">Round (Size ≥ 4)</option>
+                        <option value="round">Round</option>
                     </select>
                 </div>
 
-                <InputGroup label="LED Size (px)" type="number" min="1" value={ledSize} onChange={setLedSize}/>
-                <InputGroup label="LED Gap (px)" type="number" min="0" value={ledGap} onChange={setLedGap}/>
+                <InputGroup label="LED Size (px)" type="number" min="1" max="20" value={ledSize} onChange={setLedSize}/>
+                <InputGroup label="LED Gap (px)" type="number" min="0" max="20" value={ledGap} onChange={setLedGap}/>
                 <InputGroup label="Flash Speed (ms)" type="number" min="500" step="100" value={speed} onChange={setSpeed}/>
             </div>
         </div>

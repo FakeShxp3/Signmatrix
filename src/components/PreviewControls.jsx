@@ -1,4 +1,4 @@
-function PreviewControls({previewMode, setPreviewMode, frames, prFrames, downloadSign, isDownloading}) {
+function PreviewControls({previewMode, setPreviewMode, frames, prFrames, downloadSign, isDownloading, disabled}) {
     return (
         <div
             className="flex flex-col md:flex-row items-center justify-between gap-4 mb-4 mt-4 bg-zinc-900/50 p-3 rounded-lg border border-neutral-700/50">
@@ -38,8 +38,8 @@ function PreviewControls({previewMode, setPreviewMode, frames, prFrames, downloa
 
             <button
                 onClick={downloadSign}
-                disabled={isDownloading}
-                className={`flex items-center gap-2 px-5 py-1.5 rounded-lg font-bold text-white text-sm transition-all whitespace-nowrap ${isDownloading ? 'bg-orange-600/50 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 active:scale-95'}`}
+                disabled={isDownloading || disabled}
+                className={`flex items-center gap-2 px-5 py-1.5 rounded-lg font-bold text-white text-sm transition-all whitespace-nowrap ${isDownloading || disabled ? 'bg-orange-600/50 cursor-not-allowed' : 'bg-orange-600 hover:bg-orange-500 active:scale-95'}`}
             >
                 {isDownloading ? (
                     <>
