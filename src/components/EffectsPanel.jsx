@@ -49,6 +49,14 @@ export default function EffectsPanel({ effects, setEffects }) {
                 <Slider label="Camera softness" value={effects.cameraSoftness} min={0} max={1.5} step={0.1} unit=" px" onChange={value => update('cameraSoftness', value)} />
             </div>
         </div>
+        <div className="mt-6 border-t border-neutral-700 pt-4 space-y-3">
+            <Slider label="Dead pixels" value={effects.deadPixels} step={0.1} onChange={value => update('deadPixels', value)} />
+            <div className="flex flex-wrap items-center justify-between gap-3">
+                <p className="text-xs text-neutral-400">Percentage of the full LED grid that stays off. Failed locations stay fixed across animation frames.</p>
+                <button onClick={() => update('deadPixelSeed', String((Number(effects.deadPixelSeed) % 2147483646) + 1))}
+                        className="text-xs text-neutral-300 bg-neutral-800 hover:bg-neutral-700 rounded px-3 py-2">New dead-pixel pattern</button>
+            </div>
+        </div>
         <div className="mt-6 border-t border-neutral-700 pt-4">
             <label className="flex items-center gap-3 text-sm font-medium text-white cursor-pointer">
                 <input type="checkbox" checked={effects.transparentBackground === 'true'}

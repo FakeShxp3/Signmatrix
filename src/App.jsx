@@ -22,7 +22,7 @@ import EffectsPanel from './components/EffectsPanel.jsx';
 import useRenderedSign from './hooks/useRenderedSign.js';
 import { DEFAULT_EFFECTS, normalizeEffects } from './utils/displayEffects.js';
 
-const CURRENT_UPDATE_VERSION = "v1.11";
+const CURRENT_UPDATE_VERSION = "v1.12";
 
 
 export default function App() {

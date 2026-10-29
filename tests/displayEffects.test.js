@@ -246,3 +246,88 @@ test('background key avoids every active text colour, including inline and PR co
     assert.ok(!['000000', '0000ff', 'ff00ff', '00ff00', 'ffff00', '00ffff', 'ffffff', 'ff0000', 'ff9000'].includes(transparent.get('offColor')));
     for (const [key, value] of opaque) if (key !== 'offColor') assert.equal(transparent.get(key), value);
 });
+
+const fullPanel = (color = '#ff9000') => {
+    const canvas = createCanvas(86, 86); // 10 × 10 LEDs, size 6, gap 2, border 4.
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#000000'; ctx.fillRect(0, 0, 86, 86);
+    ctx.fillStyle = color;
+    for (let row = 0; row < 10; row++) for (let column = 0; column < 10; column++) {
+        ctx.fillRect(4 + column * 8, 4 + row * 8, 6, 6);
+    }
+    return canvas;
+};
+const failedPositions = canvas => {
+    const failures = [];
+    for (let row = 0; row < 10; row++) for (let column = 0; column < 10; column++) {
+        if (pixel(canvas, 7 + column * 8, 7 + row * 8).slice(0, 3).every(value => value === 64)) failures.push(row * 10 + column);
+    }
+    return failures;
+};
+
+test('dead-pixel percentage selects the rounded grid count and increases without moving failures', () => {
+    const source = fullPanel();
+    const low = failedPositions(renderDisplay(source, options({ deadPixels: '12.5' })));
+    const high = failedPositions(renderDisplay(source, options({ deadPixels: '40' })));
+    assert.equal(low.length, 13);
+    assert.equal(high.length, 40);
+    assert.ok(low.every(position => high.includes(position)));
+    assert.equal(options({ deadPixels: '-1' }).deadPixels, 0);
+    assert.equal(options({ deadPixels: '101' }).deadPixels, 100);
+    assert.equal(options({ deadPixels: 'bad' }).deadPixels, 0);
+});
+
+test('failure patterns persist across text colours, LED shapes and noise seeds, with an independent reroll', () => {
+    const settings = options({ deadPixels: '40' });
+    const original = failedPositions(renderDisplay(fullPanel(), settings));
+    assert.deepEqual(original, failedPositions(renderDisplay(fullPanel('#ffffff'), settings)));
+    assert.deepEqual(original, failedPositions(renderDisplay(fullPanel(), { ...settings, ledShape: 'square', noiseSeed: 20 })));
+    assert.notDeepEqual(original, failedPositions(renderDisplay(fullPanel(), { ...settings, deadPixelSeed: 2 })));
+    const saved = { ...DEFAULT_EFFECTS, deadPixels: '12.5', deadPixelSeed: '4321' };
+    const restored = options(Object.fromEntries(new URLSearchParams(saved)));
+    assert.equal(restored.deadPixels, 12.5);
+    assert.equal(restored.deadPixelSeed, 4321);
+});
+
+test('zero failures leaves output unchanged; 100% failures never emit light or leave transparent specks', () => {
+    const source = fullPanel();
+    assert.deepEqual(pixels(renderDisplay(source, options({ ledShape: 'square', deadPixels: '0' }))), pixels(source));
+    const dead = renderDisplay(source, options({ deadPixels: '100', glowAmount: '100' }));
+    assert.equal(failedPositions(dead).length, 100);
+    assert.deepEqual(pixel(dead, 11, 7), [0, 0, 0, 255], 'failed LEDs produce no bloom');
+    const transparent = renderDisplay(source, options({ deadPixels: '100', transparentBackground: true, noiseAmount: '100', noiseCoverage: '100', glowAmount: '100', cameraSoftness: '1' }));
+    assert.ok(pixels(transparent).every((value, index) => index % 4 !== 3 || value === 0));
+});
+
+test('dead pixels are included in square PNG downloads even when all other effects are disabled', async () => {
+    const source = new Blob([await fullPanel().encode('png')], { type: 'image/png' });
+    const result = await renderSign(source, options({ ledShape: 'square', deadPixels: '30' }));
+    assert.notEqual(source, result, 'must not use the unchanged-source shortcut');
+    const bitmap = await createImageBitmap(result);
+    const decoded = createCanvas(bitmap.width, bitmap.height);
+    decoded.getContext('2d').drawImage(bitmap, 0, 0);
+    assert.equal(failedPositions(decoded).length, 30);
+});
+
+test('animated GIF downloads keep the same dead LEDs in every frame', async () => {
+    const encoder = GIFEncoder();
+    const palette = [[0, 0, 0], [255, 144, 0], [255, 255, 255]];
+    for (let frame = 0; frame < 2; frame++) {
+        const indexed = new Uint8Array(86 * 86);
+        for (let row = 0; row < 10; row++) for (let column = 0; column < 10; column++) {
+            for (let y = 4 + row * 8; y < 10 + row * 8; y++) for (let x = 4 + column * 8; x < 10 + column * 8; x++) indexed[y * 86 + x] = frame + 1;
+        }
+        encoder.writeFrame(indexed, 86, 86, { palette, delay: 200 + frame * 100, repeat: 0 });
+    }
+    encoder.finish();
+    const blob = await renderSign(new Blob([encoder.bytes()], { type: 'image/gif' }), options({ ledShape: 'square', deadPixels: '25' }));
+    const frames = decompressFrames(parseGIF(await blob.arrayBuffer()), true);
+    const failures = frames.map(frame => {
+        const canvas = createCanvas(86, 86);
+        canvas.getContext('2d').putImageData(new ImageData(frame.patch, 86, 86), 0, 0);
+        return failedPositions(canvas);
+    });
+    assert.equal(failures[0].length, 25);
+    assert.deepEqual(failures[0], failures[1]);
+    assert.deepEqual(frames.map(frame => frame.delay), [200, 300]);
+});

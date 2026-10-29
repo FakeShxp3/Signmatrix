@@ -7,6 +7,8 @@ export const DEFAULT_EFFECTS = Object.freeze({
     glowRadius: '5',
     cameraSoftness: '0',
     transparentBackground: 'false',
+    deadPixels: '0',
+    deadPixelSeed: '1',
 });
 
 // Only photographic settings: preserve the user's LED shape, text and background choice.
@@ -37,6 +39,8 @@ export const normalizeEffects = (state) => ({
     glowAmount: clampNumber(state.glowAmount, 0, 100, 0),
     glowRadius: clampNumber(state.glowRadius, 1, 20, 5),
     cameraSoftness: clampNumber(state.cameraSoftness, 0, 1.5, 0),
+    deadPixels: clampNumber(state.deadPixels, 0, 100, 0),
+    deadPixelSeed: Math.round(clampNumber(state.deadPixelSeed, 1, 2147483647, 1)),
     transparentBackground: state.transparentBackground === true || state.transparentBackground === 'true',
     ledShape: state.ledShape === 'square' ? 'square' : 'round',
     ledSize: Math.round(clampNumber(state.ledSize, 1, 20, 4)),
@@ -74,6 +78,27 @@ function createLedNoise(options) {
     };
 }
 
+// Select a rounded percentage of the entire panel, independently of the text/noise.
+// A seeded partial shuffle preserves existing failures when the percentage increases.
+function createDeadPixelMask(columns, rows, options) {
+    const total = columns * rows;
+    const count = Math.round(total * options.deadPixels / 100);
+    if (!count) return null;
+    const mask = new Uint8Array(total);
+    if (count === total) return mask.fill(1);
+    const indices = Uint32Array.from({ length: total }, (_, index) => index);
+    let seed = (options.deadPixelSeed ^ 0x9e3779b9) >>> 0;
+    for (let remaining = total; remaining > total - count; remaining--) {
+        seed ^= seed << 13;
+        seed ^= seed >>> 17;
+        seed ^= seed << 5;
+        const chosen = Math.floor((seed >>> 0) / 4294967296 * remaining);
+        mask[indices[chosen]] = 1;
+        indices[chosen] = indices[remaining - 1];
+    }
+    return mask;
+}
+
 export function renderDisplay(source, options) {
     const { width, height } = source;
     const output = new OffscreenCanvas(width, height);
@@ -92,16 +117,21 @@ export function renderDisplay(source, options) {
     const size = options.ledSize;
     const pitch = size + options.ledGap;
     const shade = createLedNoise(options);
+    const columns = Math.max(0, Math.floor((width - 8 + options.ledGap) / pitch));
+    const rows = Math.max(0, Math.floor((height - 8 + options.ledGap) / pitch));
+    const deadMask = createDeadPixelMask(columns, rows, options);
+    const unlitColor = rgb(options.offColor);
     // The Signmatrix backend has a four-pixel border; sample one colour per LED.
     for (let y = 4, row = 0; y + size <= height - 4; y += pitch, row++) {
         for (let x = 4, column = 0; x + size <= width - 4; x += pitch, column++) {
             const index = (Math.floor(y + size / 2) * width + Math.floor(x + size / 2)) * 4;
             const sourceColor = Array.from(sourceData.slice(index, index + 3));
-            const isLit = sourceData[index + 3] > 0
+            const isDead = Boolean(deadMask?.[row * columns + column]);
+            const isLit = !isDead && sourceData[index + 3] > 0
                 && sourceColor.some((value, channel) => Math.abs(value - off[channel]) > tolerance)
                 && (options.sourceOffColor || sourceColor.some(value => value > 0));
             if (options.transparentBackground && !isLit) continue;
-            const color = shade(sourceColor, isLit, column, row);
+            const color = shade(isDead ? unlitColor : sourceColor, isLit, column, row);
             const drawDot = (ctx) => {
                 ctx.fillStyle = `rgb(${color.join(',')})`;
                 if (options.ledShape === 'round') {

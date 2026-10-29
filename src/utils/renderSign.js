@@ -12,7 +12,7 @@ function validateSize(width, height, frames = 1) {
 }
 
 export async function renderSign(blob, options, onProgress = () => {}) {
-    if (options.ledShape === 'square' && !options.transparentBackground && !options.cameraSoftness
+    if (options.ledShape === 'square' && !options.transparentBackground && !options.cameraSoftness && !options.deadPixels
         && !options.glowAmount && (!options.noiseAmount || !options.noiseCoverage)) return blob;
     const buffer = await blob.arrayBuffer();
     const signature = new TextDecoder().decode(buffer.slice(0, 6));
