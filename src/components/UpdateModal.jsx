@@ -7,8 +7,8 @@ function UpdateModal({ version, isOpen, onClose }) {
                 <h2 className="text-2xl font-bold text-white mb-2">New Signmatrix update</h2>
                 <p className="text-sm text-neutral-400 mb-4">Version {version}</p>
                 <div className="text-neutral-300 space-y-3 mb-6">
-                    <p>Round LEDs are now the default for all sign presets.</p>
-                    <p>Add custom colour noise and LED glow, with the same effects in your preview and PNG/GIF downloads.</p>
+                    <p>Camera noise now varies individual LEDs for a photographed-sign look. Try Match reference for a quick starting point.</p>
+                    <p>Remove the background to export only the lit text and glow, with transparent PNG and GIF downloads.</p>
                     <p>Share your effects in the page link, or undo and redo your adjustments.</p>
                 </div>
                 <button

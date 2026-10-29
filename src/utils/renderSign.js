@@ -1,8 +1,9 @@
 import { parseGIF, decompressFrame } from 'gifuct-js';
 import * as gifenc from 'gifenc';
 // gifenc publishes different ESM (Vite) and CommonJS (Node tests) entry points.
-const { GIFEncoder, quantize, applyPalette } = gifenc.default?.GIFEncoder ? gifenc.default : gifenc;
+const { GIFEncoder } = gifenc.default?.GIFEncoder ? gifenc.default : gifenc;
 import { renderDisplay } from './displayEffects.js';
+import { encodeGifPixels } from './transparency.js';
 
 function validateSize(width, height, frames = 1) {
     if (width < 1 || height < 1 || width * height > 4000000 || width * height * frames > 150000000) {
@@ -11,7 +12,8 @@ function validateSize(width, height, frames = 1) {
 }
 
 export async function renderSign(blob, options, onProgress = () => {}) {
-    if (options.ledShape === 'square' && !options.glowAmount && (!options.noiseAmount || !options.noiseCoverage)) return blob;
+    if (options.ledShape === 'square' && !options.transparentBackground && !options.cameraSoftness
+        && !options.glowAmount && (!options.noiseAmount || !options.noiseCoverage)) return blob;
     const buffer = await blob.arrayBuffer();
     const signature = new TextDecoder().decode(buffer.slice(0, 6));
     if (!signature.startsWith('GIF8')) {
@@ -47,15 +49,14 @@ export async function renderSign(blob, options, onProgress = () => {}) {
         const patch = new OffscreenCanvas(patchWidth, patchHeight);
         patch.getContext('2d').putImageData(new ImageData(frame.patch, patchWidth, patchHeight), 0, 0);
         context.drawImage(patch, left, top);
-        const result = renderDisplay(source, options, index);
+        const result = renderDisplay(source, options);
         const pixels = result.getContext('2d').getImageData(0, 0, width, height).data;
-        const palette = quantize(pixels, 256);
-        encoder.writeFrame(applyPalette(pixels, palette), width, height, {
-            palette,
+        const { index: indexed, ...frameOptions } = encodeGifPixels(pixels, options.transparentBackground);
+        encoder.writeFrame(indexed, width, height, {
+            ...frameOptions,
             // Read the original GCE: gifuct-js normalizes zero delays to 100ms.
             delay: (frames[index].gce?.delay ?? 10) * 10,
             repeat,
-            dispose: 1,
         });
         if (frame.disposalType === 2) context.fillRect(left, top, patchWidth, patchHeight);
         else if (previous) context.putImageData(previous, 0, 0);

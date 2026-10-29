@@ -10,6 +10,33 @@ export const getInitialState = (key, defaultVal) => {
     return defaultVal;
 };
 
+// Ask the backend for a distinct unlit colour, rather than deleting the user's actual
+// text colour if it happens to match the panel. This needs no second render request.
+export function chooseBackgroundKey(query) {
+    const used = [[0, 0, 0]];
+    for (const [key, value] of query) {
+        if (!/color$/i.test(key) || key === 'offColor') continue;
+        for (const segment of value.split(/[|^]/)) {
+            const hex = segment.trim().replace(/^#/, '');
+            if (/^[\da-f]{1,6}$/i.test(hex)) {
+                const padded = hex.padStart(6, '0');
+                used.push([0, 2, 4].map(offset => parseInt(padded.slice(offset, offset + 2), 16)));
+            }
+        }
+    }
+    let best = 'ff00ff';
+    let bestDistance = -1;
+    for (const r of [0, 85, 170, 255]) for (const g of [0, 85, 170, 255]) for (const b of [0, 85, 170, 255]) {
+        const candidate = [r, g, b];
+        const distance = Math.min(...used.map(color => Math.max(...color.map((v, i) => Math.abs(v - candidate[i])))));
+        if (distance > bestDistance) {
+            bestDistance = distance;
+            best = candidate.map(value => value.toString(16).padStart(2, '0')).join('');
+        }
+    }
+    return best;
+}
+
 export const buildApiUrl = (debouncedState) => {
     const query = new URLSearchParams();
     const hardware = normalizeEffects(debouncedState);
@@ -92,6 +119,8 @@ export const buildApiUrl = (debouncedState) => {
     if (activeRouteSuffix) query.append("routeSuffix", activeRouteSuffix);
     query.append("routeSuffixFont", debouncedState.routeSuffixFont);
     query.append("routeSuffixColor", (debouncedState.routeSuffixColor || "").replace("#", ""));
+
+    if (hardware.transparentBackground) query.set('offColor', chooseBackgroundKey(query));
 
     //return `http://localhost:8080/api/sign?${query.toString()}`;
     return `https://signmatrix.pythonlmn.xyz/api/sign?${query.toString()}`;

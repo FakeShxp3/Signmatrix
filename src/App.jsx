@@ -22,7 +22,7 @@ import EffectsPanel from './components/EffectsPanel.jsx';
 import useRenderedSign from './hooks/useRenderedSign.js';
 import { DEFAULT_EFFECTS, normalizeEffects } from './utils/displayEffects.js';
 
-const CURRENT_UPDATE_VERSION = "v1.10";
+const CURRENT_UPDATE_VERSION = "v1.11";
 
 
 export default function App() {
@@ -189,7 +189,7 @@ export default function App() {
             </div>
         </header>
 
-        <LivePreview url={rendered.url} loading={rendered.loading || isPending} error={rendered.error} progress={rendered.progress} onRetry={rendered.retry}/>
+        <LivePreview url={rendered.url} loading={rendered.loading || isPending} error={rendered.error} progress={rendered.progress} onRetry={rendered.retry} transparent={debouncedState.transparentBackground === "true"}/>
 
         <PreviewControls previewMode={previewMode} setPreviewMode={setPreviewMode} frames={frames} prFrames={prFrames}
                          downloadSign={handleDownload} isDownloading={isDownloading} disabled={isPending || rendered.loading || !rendered.blob}/>

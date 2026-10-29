@@ -4,7 +4,11 @@ import { normalizeEffects } from '../utils/displayEffects.js';
 
 export default function useRenderedSign(state) {
     const apiUrl = buildApiUrl(state);
-    const options = JSON.stringify(normalizeEffects(state));
+    const effects = normalizeEffects(state);
+    const options = JSON.stringify({
+        ...effects,
+        ...(effects.transparentBackground ? { sourceOffColor: new URL(apiUrl).searchParams.get('offColor') } : {}),
+    });
     const [attempt, setAttempt] = useState(0);
     const key = `${apiUrl}|${options}|${attempt}`;
     const cache = useRef(null);
