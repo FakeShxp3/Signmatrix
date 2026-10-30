@@ -7,9 +7,9 @@ function UpdateModal({ version, isOpen, onClose }) {
                 <h2 className="text-2xl font-bold text-white mb-2">New Signmatrix update</h2>
                 <p className="text-sm text-neutral-400 mb-4">Version {version}</p>
                 <div className="text-neutral-300 space-y-3 mb-6">
-                    <p>Simulate dead pixels from 0–100%, with failed LED locations that stay fixed across animation frames.</p>
-                    <p>Generate a new dead-pixel pattern, or combine failures with colour noise, glow and transparent backgrounds in PNG/GIF downloads.</p>
-                    <p>Share your effects in the page link, or undo and redo your adjustments.</p>
+                    <p>Commas, periods and other common punctuation now have fallback glyphs in fonts that were missing them, including Axion and INIT.</p>
+                    <p>Curly quotes, long dashes and ellipses are converted to sign-friendly punctuation.</p>
+                    <p>This works in destination lines, route numbers, suffixes and public relationship frames, including PNG/GIF downloads.</p>
                 </div>
                 <button
                     onClick={onClose}

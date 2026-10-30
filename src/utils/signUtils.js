@@ -1,5 +1,6 @@
 import {track} from '@vercel/analytics'
 import { normalizeEffects } from './displayEffects.js';
+import { prepareFramePunctuation, preparePunctuation } from './punctuation.js';
 
 export const getInitialState = (key, defaultVal) => {
     if (typeof window !== 'undefined') {
@@ -63,6 +64,11 @@ export const buildApiUrl = (debouncedState) => {
             targetPrFrames = [];
         }
     }
+
+    targetFrames = targetFrames.map(prepareFramePunctuation);
+    targetPrFrames = targetPrFrames.map(prepareFramePunctuation);
+    activeRoute = preparePunctuation(activeRoute, debouncedState.routeFont, '0', '16d', false).text;
+    activeRouteSuffix = preparePunctuation(activeRouteSuffix, debouncedState.routeSuffixFont, '0', '8d', false).text;
 
     if (activeRoute) query.append("route", activeRoute);
     query.append("routeFont", debouncedState.routeFont);
