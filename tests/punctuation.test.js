@@ -62,7 +62,10 @@ test('native punctuation is unchanged in every font, including supported 16t per
 
 test('periods sit on the baseline and commas have a distinct descending tail', () => {
     assert.deepEqual(readColumns(preparePunctuation('.', 'balios7').text, 7), [[0, 6]]);
-    assert.deepEqual(readColumns(preparePunctuation(',', 'balios7').text, 7), [[0, 6], [1, 5]]);
+    assert.deepEqual(readColumns(preparePunctuation(',', 'balios7').text, 7), [
+        [0, 6], [1, 4], [1, 5], [1, 6], [2, 4], [2, 5],
+    ]);
+    assert.deepEqual(readColumns(preparePunctuation(',', 'balios7w').text, 7), [[0, 6], [1, 5]]);
     for (const name of ['balios8', 'balios10', 'balios12', 'balios14', 'balios16']) {
         const height = FONT_COVERAGE[name].height;
         const points = readColumns(preparePunctuation('.', name).text, height);

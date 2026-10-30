@@ -39,6 +39,11 @@ const ALIASES = {
     '‐': '-', '‑': '-', '–': '-', '—': '-', '−': '-', '…': '...',
 };
 
+// Axion 7 comma: two dots on each of the bottom three rows, tail shifted left.
+const FONT_PATTERNS = {
+    balios7: { ',': ['000', '000', '000', '000', '011', '011', '110'] },
+};
+
 // Keep the backend's escape language intact, including user-authored custom columns.
 function tokenize(text) {
     return Array.from(text.matchAll(/\\g[\da-fA-F]|\\[\s\S]|[\s\S]/g), ([raw]) => {
@@ -47,8 +52,8 @@ function tokenize(text) {
     });
 }
 
-function encodeGlyph(char, font) {
-    const rows = PATTERNS[char];
+function encodeGlyph(char, font, fontName) {
+    const rows = FONT_PATTERNS[fontName]?.[char] ?? PATTERNS[char];
     const scale = Math.max(1, Math.floor(font.height / 7));
     const width = rows[0].length * scale;
     let encoded = '';
@@ -78,7 +83,7 @@ function prepareSegment(text, fontName) {
         return Array.from(alias || token.char).map(char => {
             let raw = alias ? char : token.raw;
             if (font?.missing.includes(char) && PATTERNS[char]) {
-                raw = encodeGlyph(char, font);
+                raw = encodeGlyph(char, font, fontName);
                 changed = true;
             }
             return { char, raw };
