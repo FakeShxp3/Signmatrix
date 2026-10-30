@@ -39,9 +39,9 @@ const ALIASES = {
     '‐': '-', '‑': '-', '–': '-', '—': '-', '−': '-', '…': '...',
 };
 
-// Axion 7 comma: two dots on each of the bottom three rows, tail shifted left.
+// Axion 8d comma: two dots on each of the bottom three rows, tail shifted left.
 const FONT_PATTERNS = {
-    balios7: { ',': ['000', '000', '000', '000', '011', '011', '110'] },
+    balios8d: { ',': ['000', '000', '000', '000', '011', '011', '110'] },
 };
 
 // Keep the backend's escape language intact, including user-authored custom columns.
